@@ -1,0 +1,8 @@
+-------------------------------------------------------------------------------
+Test set: test.TestGetProductListDAOMySQL
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.157 s <<< FAILURE! - in test.TestGetProductListDAOMySQL
+getAllProductList_ShouldReturnNonEmptyList(test.TestGetProductListDAOMySQL)  Time elapsed: 0.105 s  <<< FAILURE!
+java.lang.AssertionError: Danh sách s?n ph?m không nên r?ng
+	at test.TestGetProductListDAOMySQL.getAllProductList_ShouldReturnNonEmptyList(TestGetProductListDAOMySQL.java:18)
+

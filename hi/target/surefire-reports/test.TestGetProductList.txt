@@ -1,0 +1,8 @@
+-------------------------------------------------------------------------------
+Test set: test.TestGetProductList
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.283 s <<< FAILURE! - in test.TestGetProductList
+getProductListOK(test.TestGetProductList)  Time elapsed: 0.252 s  <<< FAILURE!
+java.lang.AssertionError: Product list should not be empty
+	at test.TestGetProductList.getProductListOK(TestGetProductList.java:19)
+
