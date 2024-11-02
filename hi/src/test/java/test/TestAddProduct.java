@@ -1,11 +1,13 @@
 package test;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
@@ -68,4 +70,38 @@ public class TestAddProduct {
 
         System.out.println("Finished testAddInvalidProduct.");
     }
-}
+      @Test
+    void testAddFoodProduct() {
+         System.out.println("Starting testAddFoodProduct...");
+    try {
+        // Setting up valid Food product data
+        int maHang = 101;
+        String tenHang = "Apple";
+        int soLuong = 50;
+        double donGia = 10.5;
+        String loaiHang = "Food";
+        Date ngaySanXuat = Date.valueOf("2023-10-01");
+        Date ngayHetHang = Date.valueOf("2024-10-01");
+        String nhaCungCap = "SupplierA";
+
+        // Create a FoodProduct object
+        Product foodProduct = new FoodProduct(maHang, tenHang, soLuong, donGia, loaiHang, ngaySanXuat, ngayHetHang, nhaCungCap);
+
+        // Act: Call the addProduct method
+        boolean result = productDAO.addProduct(foodProduct);
+
+        // Assert: Verify that the product was added successfully
+        assertTrue(result);
+        verify(mockPreparedStatement).setInt(1, foodProduct.getMaHang());
+        verify(mockPreparedStatement).setString(2, foodProduct.getTenHang());
+        verify(mockPreparedStatement).setInt(3, foodProduct.getSoLuong());
+        verify(mockPreparedStatement).setDouble(4, foodProduct.getDonGia());
+        verify(mockPreparedStatement).setString(5, foodProduct.getLoaiHang());
+        verify(mockPreparedStatement).executeUpdate();
+
+        System.out.println("Finished testAddFoodProduct.");
+    } catch (SQLException e) {
+        e.printStackTrace(); // Log the exception
+        fail("SQLException was thrown: " + e.getMessage());
+    }
+    }}
