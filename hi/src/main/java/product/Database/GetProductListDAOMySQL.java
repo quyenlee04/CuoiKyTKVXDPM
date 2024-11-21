@@ -21,6 +21,8 @@ public class GetProductListDAOMySQL implements GetProductListDatabaseBoundary {
     private static final String PASSWORD = "";
     private Connection connection;
 
+    
+
     public GetProductListDAOMySQL() {
         try {
             this.connection = connect();
@@ -129,77 +131,201 @@ public class GetProductListDAOMySQL implements GetProductListDatabaseBoundary {
     }
 
     public boolean addProduct(Product product) {
+        try {
+            connection.setAutoCommit(false);
+            
+            // Insert into main product table
+            String baseSql = "INSERT INTO product (maHang, tenHang, soLuong, donGia, loaiHang) VALUES (?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = connection.prepareStatement(baseSql)) {
+                pstmt.setInt(1, product.getMaHang());
+                pstmt.setString(2, product.getTenHang());
+                pstmt.setInt(3, product.getSoLuong());
+                pstmt.setDouble(4, product.getDonGia());
+                pstmt.setString(5, product.getLoaiHang());
+                pstmt.executeUpdate();
+                
+                // Add product details
+                if (addProductDetails(product)) {
+                    connection.commit();
+                    return true;
+                } else {
+                    connection.rollback();
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            try {
+                connection.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            return false;
+        } finally {
+            try {
+                connection.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
 
-        if (product.getSoLuong() < 0) {
-            System.out.println("Cannot add product: Quantity cannot be negative.");
+private boolean addProductDetails(Product product) {
+    if (product instanceof ElectronicsProduct) {
+        ElectronicsProduct electronics = (ElectronicsProduct) product;
+        String sql = "INSERT INTO electronicsproduct (maHang, thoiGianBaoHanh, congSuat) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmtDetail = connection.prepareStatement(sql)) {
+            pstmtDetail.setInt(1, electronics.getMaHang());
+            pstmtDetail.setInt(2, electronics.getThoiGianBaoHanh());
+            pstmtDetail.setDouble(3, electronics.getCongSuat());
+            pstmtDetail.executeUpdate(); // Chỉ gọi một lần cho chi tiết sản phẩm
+        } catch (SQLException e) {
+            e.printStackTrace();
             return false;
         }
-        
-        if (product instanceof FoodProduct) {
-            FoodProduct food = (FoodProduct) product;
-            if (food.getNgaySanXuat() == null || food.getNgayHetHan() == null) {
-                System.out.println("Cannot add product: Production and expiration dates cannot be null for food products.");
-                return false;
-            }
-        } else if (product instanceof CeramicsProduct) {
-            CeramicsProduct ceramics = (CeramicsProduct) product;
-            if (ceramics.getNgayNhapKho() == null) {
-                System.out.println("Cannot add product: Warehouse entry date cannot be null for ceramics products.");
-                return false;
-            }
-        }
-        String baseSql = "INSERT INTO product (maHang, tenHang, soLuong, donGia, loaiHang) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = connect();
-             PreparedStatement pstmt = conn.prepareStatement(baseSql)) {
-            pstmt.setInt(1, product.getMaHang());
-            pstmt.setString(2, product.getTenHang());
-            pstmt.setInt(3, product.getSoLuong());
-            pstmt.setDouble(4, product.getDonGia());
-            pstmt.setString(5, product.getLoaiHang());
-            pstmt.executeUpdate();
-    
-            // Insert product-specific details based on type
-            if (product instanceof ElectronicsProduct) {
-                ElectronicsProduct electronics = (ElectronicsProduct) product;
-                String sql = "INSERT INTO electronicsproduct (maHang, thoiGianBaoHanh, congSuat) VALUES (?, ?, ?)";
-                try (PreparedStatement pstmtDetail = conn.prepareStatement(sql)) {
-                    pstmtDetail.setInt(1, electronics.getMaHang());
-                    pstmtDetail.setInt(2, electronics.getThoiGianBaoHanh());
-                    pstmtDetail.setDouble(3, electronics.getCongSuat());
-                    pstmtDetail.executeUpdate();
-                }
-            } else if (product instanceof FoodProduct) {
-                FoodProduct food = (FoodProduct) product;
-                String sql = "INSERT INTO foodproduct (maHang, ngaySanXuat, ngayHetHan, nhaCungCap) VALUES (?, ?, ?, ?)";
-                try (PreparedStatement pstmtDetail = conn.prepareStatement(sql)) {
-                    pstmtDetail.setInt(1, food.getMaHang());
-                    pstmtDetail.setDate(2, new java.sql.Date(food.getNgaySanXuat().getTime()));
-                    pstmtDetail.setDate(3, new java.sql.Date(food.getNgayHetHan().getTime()));
-                    pstmtDetail.setString(4, food.getNhaCungCap());
-                    pstmtDetail.executeUpdate();
-                }
-            } else if (product instanceof CeramicsProduct) {
-                CeramicsProduct ceramics = (CeramicsProduct) product;
-                String sql = "INSERT INTO ceramicsproduct (maHang, nhaSanXuat, ngayNhapKho) VALUES (?, ?, ?)";
-                try (PreparedStatement pstmtDetail = conn.prepareStatement(sql)) {
-                    pstmtDetail.setInt(1, ceramics.getMaHang());
-                    pstmtDetail.setString(2, ceramics.getNhaSanXuat());
-                    pstmtDetail.setDate(3, new java.sql.Date(ceramics.getNgayNhapKho().getTime()));
-                    pstmtDetail.executeUpdate();
-
-                    // Ret
-                }
-            } conn.commit();
-            return true;
-            
-        }catch (SQLException e) {
+    } else if (product instanceof FoodProduct) {
+        FoodProduct food = (FoodProduct) product;
+        String sql = "INSERT INTO foodproduct (maHang, ngaySanXuat, ngayHetHan, nhaCungCap) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement pstmtDetail = connection.prepareStatement(sql)) {
+            pstmtDetail.setInt(1, food.getMaHang());
+            pstmtDetail.setDate(2, new java.sql.Date(food.getNgaySanXuat().getTime()));
+            pstmtDetail.setDate(3, new java.sql.Date(food.getNgayHetHan().getTime()));
+            pstmtDetail.setString(4, food.getNhaCungCap());
+            pstmtDetail.executeUpdate(); // Chỉ gọi một lần cho chi tiết sản phẩm
+        } catch (SQLException e) {
             e.printStackTrace();
-            try {
-                if (connection != null) connection.rollback(); // Roll back if an error occurs
-            } catch (SQLException rollbackException) {
-                rollbackException.printStackTrace();
-            }
+            return false;
+        }
+    } else if (product instanceof CeramicsProduct) {
+        CeramicsProduct ceramics = (CeramicsProduct) product;
+        String sql = "INSERT INTO ceramicsproduct (maHang, nhaSanXuat, ngayNhapKho) VALUES (?, ?, ?)";
+        try (PreparedStatement pstmtDetail = connection.prepareStatement(sql)) {
+            pstmtDetail.setInt(1, ceramics.getMaHang());
+            pstmtDetail.setString(2, ceramics.getNhaSanXuat());
+            pstmtDetail.setDate(3, new java.sql.Date(ceramics.getNgayNhapKho().getTime()));
+            pstmtDetail.executeUpdate(); // Chỉ gọi một lần cho chi tiết sản phẩm
+        } catch (SQLException e) {
+            e.printStackTrace();
             return false;
         }
     }
+    return true; // Trả về true nếu thêm chi tiết sản phẩm thành công
+}
+
+public boolean deleteProduct(int productId) {
+    try {
+        connection.setAutoCommit(false);
+        
+        // Delete from child tables first
+        String[] deleteChildSQL = {
+            "DELETE FROM electronicsproduct WHERE maHang = ?",
+            "DELETE FROM foodproduct WHERE maHang = ?",
+            "DELETE FROM ceramicsproduct WHERE maHang = ?"
+        };
+        
+        for (String sql : deleteChildSQL) {
+            try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+                pstmt.setInt(1, productId);
+                pstmt.executeUpdate();
+            }
+        }
+        
+        // Then delete from parent table
+        String deleteMainSQL = "DELETE FROM product WHERE maHang = ?";
+        try (PreparedStatement pstmt = connection.prepareStatement(deleteMainSQL)) {
+            pstmt.setInt(1, productId);
+            int result = pstmt.executeUpdate();
+            connection.commit();
+            return result > 0;
+        }
+    } catch (SQLException e) {
+        try {
+            connection.rollback();
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+}
+
+public boolean updateProduct(Product product) {
+    // Cập nhật thông tin chính của sản phẩm
+    String sql = "UPDATE product SET tenHang = ?, soLuong = ?, donGia = ?, loaiHang = ? WHERE maHang = ?";
+    try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+        pstmt.setString(1, product.getTenHang());
+        pstmt.setInt(2, product.getSoLuong());
+        pstmt.setDouble(3, product.getDonGia());
+        pstmt.setString(4, product.getLoaiHang());
+        pstmt.setInt(5, product.getMaHang());
+
+        int affectedRows = pstmt.executeUpdate();
+        if (affectedRows > 0) {
+            // Cập nhật thông tin cho sản phẩm con dựa vào loại hàng
+            if (product instanceof ElectronicsProduct) {
+                ElectronicsProduct electronicsProduct = (ElectronicsProduct) product;
+                String detailSql = "UPDATE electronicsproduct SET thoiGianBaoHanh = ?, congSuat = ? WHERE maHang = ?";
+                try (PreparedStatement detailPstmt = connection.prepareStatement(detailSql)) {
+                    detailPstmt.setInt(1, electronicsProduct.getThoiGianBaoHanh());
+                    detailPstmt.setDouble(2, electronicsProduct.getCongSuat());
+                    detailPstmt.setInt(3, electronicsProduct.getMaHang());
+                    detailPstmt.executeUpdate();
+                }
+            } else if (product instanceof FoodProduct) {
+                FoodProduct foodProduct = (FoodProduct) product;
+                String detailSql = "UPDATE foodproduct SET ngaySanXuat = ?, ngayHetHan = ?, nhaCungCap = ? WHERE maHang = ?";
+                try (PreparedStatement detailPstmt = connection.prepareStatement(detailSql)) {
+                    detailPstmt.setDate(1, new java.sql.Date(foodProduct.getNgaySanXuat().getTime()));
+                    detailPstmt.setDate(2, new java.sql.Date(foodProduct.getNgayHetHan().getTime()));
+                    detailPstmt.setString(3, foodProduct.getNhaCungCap());
+                    detailPstmt.setInt(4, foodProduct.getMaHang());
+                    detailPstmt.executeUpdate();
+                }
+            } else if (product instanceof CeramicsProduct) {
+                CeramicsProduct ceramicsProduct = (CeramicsProduct) product;
+                String detailSql = "UPDATE ceramicsproduct SET nhaSanXuat = ?, ngayNhapKho = ? WHERE maHang = ?";
+                try (PreparedStatement detailPstmt = connection.prepareStatement(detailSql)) {
+                    detailPstmt.setString(1, ceramicsProduct.getNhaSanXuat());
+                    detailPstmt.setDate(2, new java.sql.Date(ceramicsProduct.getNgayNhapKho().getTime()));
+                    detailPstmt.setInt(3, ceramicsProduct.getMaHang());
+                    detailPstmt.executeUpdate();
+                }
+            }
+            return true; // Trả về true nếu cập nhật thành công
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return false; // Trả về false nếu có lỗi xảy ra
+}
+
+public List<Product> getProductsExpiringSoon() {
+    List<Product> products = new ArrayList<>();
+    String sql = "SELECT p.maHang, p.tenHang, p.soLuong, p.donGia, p.loaiHang " +
+                 "FROM product p " +
+                 "JOIN foodproduct f ON p.maHang = f.maHang " +
+                 "WHERE f.ngayHetHan BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+
+    try (Connection conn = connect();
+         PreparedStatement pstmt = conn.prepareStatement(sql);
+         ResultSet rs = pstmt.executeQuery()) {
+
+        while (rs.next()) {
+            int maHang = rs.getInt("maHang");
+            String tenHang = rs.getString("tenHang");
+            int soLuong = rs.getInt("soLuong");
+            double donGia = rs.getDouble("donGia");
+            String loaiHang = rs.getString("loaiHang");
+          
+            
+                FoodProduct foodProduct = new FoodProduct(maHang, tenHang, soLuong, donGia, loaiHang, null, null, null);
+                products.add(foodProduct);
+            
+             
+            
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return products;
+}
 }

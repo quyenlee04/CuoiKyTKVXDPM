@@ -5,7 +5,7 @@ public class ElectronicsProduct extends Product{
     private double congSuat;
 
     public ElectronicsProduct( int maHang,String tenHang, int soLuong,double donGia, String loaiHang, int thoiGianBaoHanh, double congSuat) {
-        super(maHang,tenHang, soLuong,donGia, "Electrics");
+        super(maHang,tenHang, soLuong,donGia, "Electronics");
         this.thoiGianBaoHanh = thoiGianBaoHanh;
         this.congSuat = congSuat;
     }
@@ -37,6 +37,16 @@ public class ElectronicsProduct extends Product{
     }
 
     
-
+    @Override
+    public String toString() {
+        return "ElectronicsProduct{" +
+                "maHang=" + maHang +
+                ", tenHang='" + tenHang + '\'' +
+                ", soLuong=" + soLuong +
+                ", donGia=" + donGia +
+                ", thoiGianBaoHanh=" + thoiGianBaoHanh +
+                ", congSuat=" + congSuat +
+                '}';
+    }
 
 }

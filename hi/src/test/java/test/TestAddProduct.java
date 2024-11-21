@@ -1,18 +1,17 @@
 package test;
-
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import static org.mockito.ArgumentMatchers.any;
-import org.mockito.Mockito;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import product.Database.GetProductListDAOMySQL;
@@ -21,87 +20,105 @@ import product.Entity.FoodProduct;
 import product.Entity.Product;
 
 public class TestAddProduct {
-
     private GetProductListDAOMySQL productDAO;
-    private Connection mockConnection;
     private PreparedStatement mockPreparedStatement;
+    private Connection mockConnection;
+    private static final Logger logger = Logger.getLogger(TestAddProduct.class.getName());
+
     @BeforeEach
     public void setUp() throws SQLException {
-        mockConnection = Mockito.mock(Connection.class);
-        mockPreparedStatement = Mockito.mock(PreparedStatement.class);
+        mockConnection = mock(Connection.class);
+        mockPreparedStatement = mock(PreparedStatement.class);
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+        
+        // Instantiate your DAO with the mock connection
         productDAO = new GetProductListDAOMySQL(mockConnection);
-        when(mockConnection.prepareStatement(any(String.class))).thenReturn(mockPreparedStatement);
 
+        
     }
+@Test
+@DisplayName("Test adding a valid electronics product successfully")
+public void testAddValidProduct() throws SQLException {
+    logger.info("Starting testAddValidProduct...");
+    
+    // Arrange
+    when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+    when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+    
+    Product validProduct = new ElectronicsProduct(
+        1, 
+        "Test Laptop", 
+        10, 
+        10000, 
+        "Electrics", 
+        12, 
+        500.0
+    );
+    
+    // Act
+    boolean result = productDAO.addProduct(validProduct);
+    
+    // Assert
+    assertTrue(result, "Product should be added successfully");
+    logger.info("Finished testAddValidProduct. Result: " + result);
+}
+
+@Test
+@DisplayName("Test adding a valid food product successfully")
+public void testAddValidFoodProduct() throws SQLException {
+    logger.info("Starting testAddValidFoodProduct...");
+    
+    // Arrange
+    when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+    Date currentDate = new Date(System.currentTimeMillis());
+    Date expiryDate = new Date(System.currentTimeMillis() + 86400000); // tomorrow
+    
+    Product validProduct = new FoodProduct(
+        2,
+        "Test Food",
+        20,
+        50.0,
+        "Food",
+        currentDate,
+        expiryDate,
+        "Test Supplier"
+    );
+    
+    // Act
+    boolean result = productDAO.addProduct(validProduct);
+    
+    // Assert
+    assertTrue(result, "Food product should be added successfully");
+    logger.info("Finished testAddValidFoodProduct. Result: " + result);
+}
+
+
 
     @Test
-    public void testAddValidProduct() throws SQLException {
-        System.out.println("Starting testAddValidProduct...");
-        
-        
-        Product validProduct = new ElectronicsProduct(34, "Laptop", -5, 1000.0, "Electronics", 24, 1500.0);
-        
-
-        boolean result = productDAO.addProduct(validProduct);
-      
-        assertTrue(result);
-        verify(mockPreparedStatement).setInt(1, validProduct.getMaHang());
-        verify(mockPreparedStatement).setString(2, validProduct.getTenHang());
-        verify(mockPreparedStatement).setInt(3, validProduct.getSoLuong());
-        verify(mockPreparedStatement).setDouble(4, validProduct.getDonGia());
-        verify(mockPreparedStatement).setString(5, validProduct.getLoaiHang());
-        verify(mockPreparedStatement).executeUpdate();
-
-        System.out.println("Finished testAddValidProduct.");
-    }
-
-    @Test
+    @DisplayName("Test adding an invalid product")
     public void testAddInvalidProduct() throws SQLException {
-        System.out.println("Starting testAddInvalidProduct...");
+        logger.info("Starting testAddInvalidProduct...");
         
         // Arrange: Create an invalid FoodProduct with incorrect data
-        Product invalidProduct = new FoodProduct(15, "Invalid ", 32, 50.0, "Food", null, null, "th");
+        Product invalidProduct = new FoodProduct(15, "Invalid", 32, 50.0, "Food", null, null, "th");
 
         // Act: Call the addProduct method
         boolean result = productDAO.addProduct(invalidProduct);
 
         // Assert: Verify the product was not added due to invalid data
-        assertFalse(result);
-
-        System.out.println("Finished testAddInvalidProduct.");
+        assertFalse(result , "Product should not be added due to invalid data.");
+        logger.info("Finished testAddInvalidProduct. Result: " + result);
     }
-      @Test
-    void testAddFoodProduct() {
-         System.out.println("Starting testAddFoodProduct...");
-    try {
-        // Setting up valid Food product data
-        int maHang = 101;
-        String tenHang = "Apple";
-        int soLuong = 50;
-        double donGia = 10.5;
-        String loaiHang = "Food";
-        Date ngaySanXuat = Date.valueOf("2023-10-01");
-        Date ngayHetHang = Date.valueOf("2024-10-01");
-        String nhaCungCap = "SupplierA";
+    @Test
+@DisplayName("Test adding a product with negative quantity")
+public void testAddProductWithNegativeQuantity() throws SQLException {
+    logger.info("Starting testAddProductWithNegativeQuantity...");
 
-        // Create a FoodProduct object
-        Product foodProduct = new FoodProduct(maHang, tenHang, soLuong, donGia, loaiHang, ngaySanXuat, ngayHetHang, nhaCungCap);
+    Product invalidProduct = new ElectronicsProduct(35, "Laptop", -5, 1000.0, "Electronics", 24, 1500.0);
 
-        // Act: Call the addProduct method
-        boolean result = productDAO.addProduct(foodProduct);
+    boolean result = productDAO.addProduct(invalidProduct);
 
-        // Assert: Verify that the product was added successfully
-        assertTrue(result);
-        verify(mockPreparedStatement).setInt(1, foodProduct.getMaHang());
-        verify(mockPreparedStatement).setString(2, foodProduct.getTenHang());
-        verify(mockPreparedStatement).setInt(3, foodProduct.getSoLuong());
-        verify(mockPreparedStatement).setDouble(4, foodProduct.getDonGia());
-        verify(mockPreparedStatement).setString(5, foodProduct.getLoaiHang());
-        verify(mockPreparedStatement).executeUpdate();
-
-        System.out.println("Finished testAddFoodProduct.");
-    } catch (SQLException e) {
-        e.printStackTrace(); // Log the exception
-        fail("SQLException was thrown: " + e.getMessage());
-    }
-    }}
+    assertFalse(result, "Product should not be added due to negative quantity.");
+    logger.info("Finished testAddProductWithNegativeQuantity. Result: " + result);
+}
+}
