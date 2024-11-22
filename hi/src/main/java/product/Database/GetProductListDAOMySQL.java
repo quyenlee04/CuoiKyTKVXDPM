@@ -40,6 +40,22 @@ public class GetProductListDAOMySQL implements GetProductListDatabaseBoundary {
     private Connection connect() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
+    public List<String> getAllProductTypes() {
+        List<String> productTypes = new ArrayList<>();
+        String sql = "SELECT DISTINCT loaiHang FROM product"; // Truy vấn lấy loại hàng khác nhau
+    
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+    
+            while (rs.next()) {
+                productTypes.add(rs.getString("loaiHang"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return productTypes;
+    }
 
     @Override
     public List<Product> getAllProductList() {
@@ -247,6 +263,69 @@ public boolean deleteProduct(int productId) {
         return false;
     }
 }
+
+public Product getProductById(int id) {
+    String sql = "SELECT p.*, " +
+                 "e.thoiGianBaoHanh, e.congSuat, " +
+                 "f.ngaySanXuat, f.ngayHetHan, f.nhaCungCap, " +
+                 "c.nhaSanXuat, c.ngayNhapKho " +
+                 "FROM product p " +
+                 "LEFT JOIN electronicsproduct e ON p.maHang = e.maHang " +
+                 "LEFT JOIN foodproduct f ON p.maHang = f.maHang " +
+                 "LEFT JOIN ceramicsproduct c ON p.maHang = c.maHang " +
+                 "WHERE p.maHang = ?";
+
+    try (Connection conn = connect();
+         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        
+        pstmt.setInt(1, id);
+        ResultSet rs = pstmt.executeQuery();
+
+        if (rs.next()) {
+            String loaiHang = rs.getString("loaiHang");
+            
+            switch (loaiHang) {
+                case "Electronics":
+                    return new ElectronicsProduct(
+                        rs.getInt("maHang"),
+                        rs.getString("tenHang"), 
+                        rs.getInt("soLuong"),
+                        rs.getDouble("donGia"),
+                        loaiHang,
+                        rs.getInt("thoiGianBaoHanh"),
+                        rs.getDouble("congSuat")
+                    );
+                    
+                case "Food": 
+                    return new FoodProduct(
+                        rs.getInt("maHang"),
+                        rs.getString("tenHang"),
+                        rs.getInt("soLuong"), 
+                        rs.getDouble("donGia"),
+                        loaiHang,
+                        rs.getDate("ngayHetHan"),
+                        rs.getDate("ngaySanXuat"),
+                        rs.getString("nhaCungCap")
+                    );
+                    
+                case "Ceramics":
+                    return new CeramicsProduct(
+                        rs.getInt("maHang"),
+                        rs.getString("tenHang"),
+                        rs.getInt("soLuong"),
+                        rs.getDouble("donGia"), 
+                        loaiHang,
+                        rs.getString("nhaSanXuat"),
+                        rs.getDate("ngayNhapKho")
+                    );
+            }
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return null;
+}
+
 
 public boolean updateProduct(Product product) {
     // Cập nhật thông tin chính của sản phẩm

@@ -7,6 +7,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 
+import product.UI.GetProductListViewModel;
 import product.Database.GetProductListDAOMySQL;
 import product.Entity.CeramicsProduct;
 import product.Entity.ElectronicsProduct;
@@ -132,7 +134,7 @@ public class GetProductListView {
 
          addButton.addActionListener(e -> showAddProductDialog(frame, tableModel));
          deleteButton.addActionListener(e -> showDeleteProductDialog(frame, tableModel));
-         editButton.addActionListener(e -> showEditProductDialog(frame, tableModel));
+         editButton.addActionListener(e -> showFindProductDialog(frame));
          totalButton.addActionListener(e -> calculateTotalStock());
 
          searchButton.addActionListener(e -> {
@@ -148,9 +150,7 @@ public class GetProductListView {
                     if (product instanceof FoodProduct) {
                         FoodProduct foodProduct = (FoodProduct) product;
                         result.append(foodProduct.getTenHang())
-                              .append(" - Ngày hết hạn: ")
-                              .append(foodProduct.getNgayHetHan())
-                              .append("\n");
+                        .append("\n");
                     }
                 }
                 JOptionPane.showMessageDialog(frame, result.toString(), "Kết quả tìm kiếm", JOptionPane.INFORMATION_MESSAGE);
@@ -177,7 +177,12 @@ public class GetProductListView {
             JTextField tenSanPhamField = new JTextField();
             JTextField soLuongField = new JTextField();
             JTextField donGiaField = new JTextField();
-            JComboBox<String> loaiHangComboBox = new JComboBox<>(new String[] { "Electronics", "Food", "Ceramics" });
+           
+            JComboBox<String> loaiHangComboBox = new JComboBox<>();
+            List<String> productTypes = getProductListDAOMySQL.getAllProductTypes();
+            for (String type : productTypes) {
+            loaiHangComboBox.addItem(type);
+            }
         
             inputPanel.add(new JLabel("Mã sản phẩm:"));
             inputPanel.add(maSanPhamField);
@@ -220,18 +225,17 @@ public class GetProductListView {
         
             // Add panels to the card panel
             cardPanel.add(new JPanel(), "None"); 
-            cardPanel.add(electronicsPanel, "Electrics");
+            cardPanel.add(electronicsPanel, "Electronics");
             cardPanel.add(foodPanel, "Food");
             cardPanel.add(ceramicsPanel, "Ceramics");
         
-            // Show relevant fields based on product type selection
-            loaiHangComboBox.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    String selectedType = (String) loaiHangComboBox.getSelectedItem();
-                    CardLayout cl = (CardLayout) (cardPanel.getLayout());
-                    cl.show(cardPanel, selectedType);
-                }
-            });
+             loaiHangComboBox.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            String selectedType = (String) loaiHangComboBox.getSelectedItem();
+            CardLayout cl = (CardLayout) (cardPanel.getLayout());
+            cl.show(cardPanel, selectedType);
+        }
+    });
         
             JPanel buttonPanel = new JPanel();
             JButton saveButton = new JButton("Lưu");
@@ -275,21 +279,23 @@ public class GetProductListView {
         }
 
         
-    private void updateTableModel(List<GetProductListViewModel> updatedProducts, DefaultTableModel tableModel) {
-        tableModel.setRowCount(0);
-        for (GetProductListViewModel product : updatedProducts) {
-            Object[] row = {
-                product.maHang,
-                product.tenHang,
-                product.soLuong,
-                product.donGia,
-                product.loaiHang,
-                product.tinhVAT
-            };
-            tableModel.addRow(row);
+        private void updateTableModel(List<GetProductListViewModel> products, DefaultTableModel tableModel) {
+            tableModel.setRowCount(0); // Xóa tất cả các hàng hiện tại
+            for (GetProductListViewModel product : products) {
+                Object[] row = {
+                    product.maHang,
+                    product.tenHang,
+                    product.soLuong,
+                    product.donGia,
+                    product.loaiHang,
+                    product.tinhVAT
+                };
+                tableModel.addRow(row);
+            }
         }
-    }
 
+    
+    
    
     private void showDeleteProductDialog(JFrame parentFrame, DefaultTableModel tableModel) {
         JDialog dialog = new JDialog(parentFrame, "Xóa Sản Phẩm", true);
@@ -331,86 +337,164 @@ public class GetProductListView {
         dialog.setLocationRelativeTo(parentFrame);
         dialog.setVisible(true);
     }
-    private void showEditProductDialog(JFrame parentFrame, DefaultTableModel tableModel) {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow == -1) {
-            JOptionPane.showMessageDialog(parentFrame, "Vui lòng chọn sản phẩm để sửa.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-    
-        // Lấy thông tin sản phẩm đã chọn
-        int maHang = (int) tableModel.getValueAt(selectedRow, 0);
-        String tenHang = (String) tableModel.getValueAt(selectedRow, 1);
-        int soLuong = (int) tableModel.getValueAt(selectedRow, 2);
-        double donGia = (double) tableModel.getValueAt(selectedRow, 3);
-        String loaiHang = (String) tableModel.getValueAt(selectedRow, 4);
-    
-        // Hiển thị dialog sửa sản phẩm
-        JDialog dialog = new JDialog(parentFrame, "Sửa Sản Phẩm", true);
-        dialog.setSize(400, 400);
-        dialog.setLayout(new BorderLayout());
-    
-        JPanel inputPanel = new JPanel(new GridLayout(5, 2, 10, 10));
-    
-        JTextField maSanPhamField = new JTextField(String.valueOf(maHang));
-        JTextField tenSanPhamField = new JTextField(tenHang);
-        JTextField soLuongField = new JTextField(String.valueOf(soLuong));
-        JTextField donGiaField = new JTextField(String.valueOf(donGia));
-        JComboBox<String> loaiHangComboBox = new JComboBox<>(new String[]{"Electronics", "Food", "Ceramics"});
-        loaiHangComboBox.setSelectedItem(loaiHang);
-    
-        inputPanel.add(new JLabel("Mã sản phẩm:"));
-        inputPanel.add(maSanPhamField);
-        inputPanel.add(new JLabel("Tên sản phẩm:"));
-        inputPanel.add(tenSanPhamField);
-        inputPanel.add(new JLabel("Số lượng:"));
-        inputPanel.add(soLuongField);
-        inputPanel.add(new JLabel("Đơn giá:"));
-        inputPanel.add(donGiaField);
-        inputPanel.add(new JLabel("Loại hàng:"));
-        inputPanel.add(loaiHangComboBox);
-    
-        JPanel buttonPanel = new JPanel();
-        JButton saveButton = new JButton("Lưu");
-        buttonPanel.add(saveButton);
-    
-        dialog.add(inputPanel, BorderLayout.CENTER);
-        dialog.add(buttonPanel, BorderLayout.SOUTH);
-    
-        saveButton.addActionListener(e -> {
+
+    private void showFindProductDialog(JFrame parentFrame) {
+        JDialog dialog = new JDialog(parentFrame, "Tìm Sản Phẩm", true);
+        dialog.setSize(300, 150);
+        dialog.setLayout(new GridLayout(3, 1));
+
+        JTextField maHangField = new JTextField();
+        dialog.add(new JLabel("Nhập Mã Hàng:"));
+        dialog.add(maHangField);
+
+        JButton findButton = new JButton("Tìm");
+        dialog.add(findButton);
+
+        findButton.addActionListener(e -> {
             try {
-                int maHangEdit = Integer.parseInt(maSanPhamField.getText());
-                String tenHangEdit = tenSanPhamField.getText();
-                int soLuongEdit = Integer.parseInt(soLuongField.getText());
-                double donGiaEdit = Double.parseDouble(donGiaField.getText());
-                String loaiHangEdit = (String) loaiHangComboBox.getSelectedItem();
-    
-                // Create a product using the createProduct method
-                Product product = createProduct(maHangEdit, tenHangEdit, soLuongEdit, donGiaEdit, loaiHangEdit);
-    
-                UpdateProductController editProductController = new UpdateProductController(new UpdateProductUseCase(getProductListDAOMySQL));
-                boolean success = editProductController.updateProduct(product);
-    
-                if (success) {
-                    // Update the table
-                    tableModel.setValueAt(tenHangEdit, selectedRow, 1);
-                    tableModel.setValueAt(soLuongEdit, selectedRow, 2);
-                    tableModel.setValueAt(donGiaEdit, selectedRow, 3);
-                    tableModel.setValueAt(loaiHangEdit, selectedRow, 4);
+                int maHang = Integer.parseInt(maHangField.getText());
+                Product product = getProductListDAOMySQL.getProductById(maHang);
+                if (product != null) {
                     dialog.dispose();
-                    JOptionPane.showMessageDialog(parentFrame, "Sửa sản phẩm thành công!");
+                    showEditProductDialog(parentFrame, product);
                 } else {
-                    JOptionPane.showMessageDialog(dialog, "Lỗi: Không thể sửa sản phẩm.", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(dialog, "Không tìm thấy sản phẩm với mã hàng: " + maHang);
                 }
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(dialog, "Đã xảy ra lỗi: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng nhập mã hàng hợp lệ.");
             }
         });
-    
+
         dialog.setLocationRelativeTo(parentFrame);
         dialog.setVisible(true);
     }
-private void calculateTotalStock() {
+
+    private void showEditProductDialog(JFrame parentFrame, Product product) {
+        JDialog dialog = new JDialog(parentFrame, "Sửa Sản Phẩm", true);
+        dialog.setSize(400, 500);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel basicInfoPanel = new JPanel(new GridLayout(5, 2, 10, 10));
+        JTextField tenSanPhamField = new JTextField(product.getTenHang());
+        JTextField soLuongField = new JTextField(String.valueOf(product.getSoLuong()));
+        JTextField donGiaField = new JTextField(String.valueOf(product.getDonGia()));
+        
+        basicInfoPanel.add(new JLabel("Tên sản phẩm:"));
+        basicInfoPanel.add(tenSanPhamField);
+        basicInfoPanel.add(new JLabel("Số lượng:"));
+        basicInfoPanel.add(soLuongField);
+        basicInfoPanel.add(new JLabel("Đơn giá:"));
+        basicInfoPanel.add(donGiaField);
+
+        JPanel specificInfoPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+        
+        if (product instanceof ElectronicsProduct) {
+            ElectronicsProduct ep = (ElectronicsProduct) product;
+            tgBaoHanhField = new JTextField(String.valueOf(ep.getThoiGianBaoHanh()));
+            congSuatField = new JTextField(String.valueOf(ep.getCongSuat()));
+            
+            specificInfoPanel.add(new JLabel("Thời gian bảo hành:"));
+            specificInfoPanel.add(tgBaoHanhField);
+            specificInfoPanel.add(new JLabel("Công suất:"));
+            specificInfoPanel.add(congSuatField);
+        }
+        else if (product instanceof FoodProduct) {
+            FoodProduct fp = (FoodProduct) product;
+            ngaySanXuatField = new JTextField(fp.getNgaySanXuat().toString());
+            ngayHetHanField = new JTextField(fp.getNgayHetHan().toString());
+            nhaCungCapField = new JTextField(fp.getNhaCungCap());
+            
+            specificInfoPanel.add(new JLabel("Ngày sản xuất:"));
+            specificInfoPanel.add(ngaySanXuatField);
+            specificInfoPanel.add(new JLabel("Ngày hết hạn:"));
+            specificInfoPanel.add(ngayHetHanField);
+            specificInfoPanel.add(new JLabel("Nhà cung cấp:"));
+            specificInfoPanel.add(nhaCungCapField);
+        }
+        else if (product instanceof CeramicsProduct) {
+            CeramicsProduct cp = (CeramicsProduct) product;
+            nhaSanXuatField = new JTextField(cp.getNhaSanXuat());
+            ngayNhapKhoField = new JTextField(cp.getNgayNhapKho().toString());
+            
+            specificInfoPanel.add(new JLabel("Nhà sản xuất:"));
+            specificInfoPanel.add(nhaSanXuatField);
+            specificInfoPanel.add(new JLabel("Ngày nhập kho:"));
+            specificInfoPanel.add(ngayNhapKhoField);
+        }
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(basicInfoPanel, BorderLayout.NORTH);
+        mainPanel.add(specificInfoPanel, BorderLayout.CENTER);
+        
+        JButton saveButton = new JButton("Lưu");
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(saveButton);
+
+        dialog.add(mainPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        saveButton.addActionListener(e -> {
+            try {
+                String tenHang = tenSanPhamField.getText();
+                int soLuong = Integer.parseInt(soLuongField.getText());
+                double donGia = Double.parseDouble(donGiaField.getText());
+                
+                Product updatedProduct = createProduct(
+                    product.getMaHang(), 
+                    tenHang,
+                    soLuong,
+                    donGia,
+                    product.getLoaiHang()
+                );
+
+                UpdateProductController controller = new UpdateProductController(
+                    new UpdateProductUseCase(getProductListDAOMySQL)
+                );
+
+                if (controller.updateProduct(updatedProduct)) {
+                    List<Product> updatedProducts = getProductListDAOMySQL.getAllProductList();
+                    List<GetProductListViewModel> viewModels = convertToViewModel(updatedProducts);
+                    DefaultTableModel model = (DefaultTableModel) table.getModel();
+                    model.setRowCount(0);
+                    for (GetProductListViewModel vm : viewModels) {
+                        model.addRow(new Object[]{
+                            vm.maHang,
+                            vm.tenHang,
+                            vm.soLuong,
+                            vm.donGia,
+                            vm.loaiHang,
+                            vm.tinhVAT
+                        });
+                    }
+                    dialog.dispose();
+                    JOptionPane.showMessageDialog(parentFrame, "Cập nhật sản phẩm thành công!");
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Không thể cập nhật sản phẩm");
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(dialog, "Lỗi: " + ex.getMessage());
+            }
+        });
+
+        dialog.setLocationRelativeTo(parentFrame);
+        dialog.setVisible(true);
+    }
+    private List<GetProductListViewModel> convertToViewModel(List<Product> products) {
+        List<GetProductListViewModel> viewModels = new ArrayList<>();
+        for (Product product : products) {
+            viewModels.add(new GetProductListViewModel(
+                product.getMaHang(),
+                product.getTenHang(),
+                product.getSoLuong(),
+                product.getDonGia(),
+                product.getLoaiHang(),
+                product.tinhVAT()
+            ));
+        }
+        return viewModels;
+    }
+    
+    private void calculateTotalStock() {
     CalculateTotalStockController controller = new CalculateTotalStockController(
             new CalculateTotalStockUseCase(getProductListDAOMySQL));
     Map<String, Integer> totalStock = controller.calculateTotalStock();
