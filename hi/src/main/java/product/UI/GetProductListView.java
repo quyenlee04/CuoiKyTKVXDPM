@@ -57,7 +57,7 @@ public class GetProductListView {
     private JTextField nhaSanXuatField;
     private JTextField ngayNhapKhoField;
 
-    // Modify the constructor to accept GetProductListDAOMySQL
+    
     public GetProductListView(GetProductListDAOMySQL getProductListDAOMySQL) {
         this.getProductListDAOMySQL = getProductListDAOMySQL;
         

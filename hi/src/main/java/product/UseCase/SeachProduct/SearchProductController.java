@@ -12,7 +12,7 @@ public class SearchProductController {
     }
 
     public List<Product> searchProductsExpiringSoon() {
-        // Sử dụng searchProductUseCase để lấy danh sách sản phẩm hết hạn trong 1 tuần
+        
         return searchProductUseCase.execute();
     }
 }

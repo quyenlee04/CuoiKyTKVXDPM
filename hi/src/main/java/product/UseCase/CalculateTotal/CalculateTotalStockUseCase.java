@@ -21,8 +21,6 @@ private final GetProductListDAOMySQL productListDAOMySQL;
         for (Product product : productList) {
             String productType = product.getLoaiHang();
             int quantity = product.getSoLuong();
-
-            // Cộng dồn số lượng cho từng loại hàng hóa
             totalStock.put(productType, totalStock.getOrDefault(productType, 0) + quantity);
         }
 

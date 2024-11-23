@@ -36,17 +36,15 @@ public class ElectronicsProduct extends Product{
         this.congSuat = congSuat;
     }
 
-    
     @Override
-    public String toString() {
-        return "ElectronicsProduct{" +
-                "maHang=" + maHang +
-                ", tenHang='" + tenHang + '\'' +
-                ", soLuong=" + soLuong +
-                ", donGia=" + donGia +
-                ", thoiGianBaoHanh=" + thoiGianBaoHanh +
-                ", congSuat=" + congSuat +
-                '}';
-    }
+public String toString() {
+    return String.format(
+        "Sản phẩm điện tử [Mã: %d, Tên: '%s', Số lượng: %d, Đơn giá: %.2f VNĐ, " +
+        "Thời gian bảo hành: %d tháng, Công suất: %.2f W]",
+        getMaHang(), getTenHang(), getSoLuong(), getDonGia(), 
+        thoiGianBaoHanh, congSuat
+    );
+}
+
 
 }

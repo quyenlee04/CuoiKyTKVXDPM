@@ -31,22 +31,22 @@ public class TestDeleteProduct {
 
     @Test
     public void testDeleteProduct() {
-        // Tạo một sản phẩm để kiểm tra
+     
         ElectronicsProduct product = new ElectronicsProduct(1, "Test Product", 10, 100.0, "Electronics", 12, 500.0);
         
-        // Giả lập hành vi của DAO
+     
         when(productDAO.addProduct(product)).thenReturn(true);
         when(productDAO.getAllProductList()).thenReturn(new ArrayList<Product>() {{
-            add(product); // Thêm sản phẩm vào danh sách giả lập
+            add(product); 
         }});
-        when(productDAO.deleteProduct(1)).thenReturn(true); // Giả lập xóa thành công
+        when(productDAO.deleteProduct(1)).thenReturn(true); 
 
-        // Thực hiện thêm sản phẩm
+   
         boolean isAdded = productDAO.addProduct(product);
         System.out.println("Thêm product: " + product.getTenHang() + " - Success: " + isAdded);
         assertTrue(isAdded, "Sản phẩm nên được thêm thành công");
 
-        // Kiểm tra xem sản phẩm có tồn tại trước khi xóa
+
         Product foundProduct = productDAO.getAllProductList().stream()
             .filter(p -> p.getMaHang() == 1)
             .findFirst()
@@ -55,14 +55,13 @@ public class TestDeleteProduct {
         assertNotNull(foundProduct, "Sản phẩm phải tồn tại trước khi xóa");
         System.out.println("Sản phẩm được tìm thấy trước khi xóa: " + foundProduct.getTenHang());
 
-        // Thực hiện xóa sản phẩm
+      
         boolean isDeleted = productDAO.deleteProduct(1);
         System.out.println("Xóa sản phẩm với maHang 1 - Thành công: " + isDeleted);
         
-        // Kiểm tra xem xóa thành công
+       
         assertTrue(isDeleted, "Sản phẩm nên được xóa thành công");
 
-        // Kiểm tra xem sản phẩm đã bị xóa
         when(productDAO.getAllProductList()).thenReturn(new ArrayList<>()); // Giả lập danh sách sản phẩm rỗng
         assertNull(productDAO.getAllProductList().stream()
             .filter(p -> p.getMaHang() == 1)

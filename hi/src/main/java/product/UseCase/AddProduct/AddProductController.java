@@ -12,9 +12,11 @@ private final AddProductUseCase addProductUseCase;
     public void addProduct(Product product) {
         boolean success = addProductUseCase.execute(product);
         if (success) {
-            // Thông báo thành công
+        
+            System.out.println("Thêm sản phẩm thành công: " );
         } else {
-            // Thông báo thất bại
+          
+            System.out.println("Thêm sản phẩm thất bại: " );
         }
     }
 }

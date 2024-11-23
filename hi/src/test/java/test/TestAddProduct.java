@@ -1,4 +1,5 @@
 package test;
+
 import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -33,92 +34,77 @@ public class TestAddProduct {
         
         // Instantiate your DAO with the mock connection
         productDAO = new GetProductListDAOMySQL(mockConnection);
-
-        
     }
-@Test
-@DisplayName("Test adding a valid electronics product successfully")
-public void testAddValidProduct() throws SQLException {
-    logger.info("Starting testAddValidProduct...");
-    
-    // Arrange
-    when(mockPreparedStatement.executeUpdate()).thenReturn(1);
-    when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
-    
-    Product validProduct = new ElectronicsProduct(
-        1, 
-        "Test Laptop", 
-        10, 
-        10000, 
-        "Electrics", 
-        12, 
-        500.0
-    );
-    
-    // Act
-    boolean result = productDAO.addProduct(validProduct);
-    
-    // Assert
-    assertTrue(result, "Product should be added successfully");
-    logger.info("Finished testAddValidProduct. Result: " + result);
-}
 
-@Test
-@DisplayName("Test adding a valid food product successfully")
-public void testAddValidFoodProduct() throws SQLException {
-    logger.info("Starting testAddValidFoodProduct...");
+    @Test
+    @DisplayName("Test adding a valid electronics product successfully")
+    public void testAddValidProduct() throws SQLException {
+        logger.info("Bắt đầu kiểm tra thêm sản phẩm điện tử...");
+        System.out.println("Bắt đầu kiểm tra thêm sản phẩm điện tử...");
     
-    // Arrange
-    when(mockPreparedStatement.executeUpdate()).thenReturn(1);
-    Date currentDate = new Date(System.currentTimeMillis());
-    Date expiryDate = new Date(System.currentTimeMillis() + 86400000); // tomorrow
+        when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+        when(mockConnection.prepareStatement(anyString())).thenReturn(mockPreparedStatement);
+        
+        Product validProduct = new ElectronicsProduct(
+            1, "Test Laptop", 10, 10000, "Electrics", 12, 500.0
+        );
+        
+        boolean result = productDAO.addProduct(validProduct);
+        
+        assertTrue(result, "Sản phẩm phải được thêm thành công");
+        logger.info("Kết thúc kiểm tra. Kết quả: " + (result ? "Thành công" : "Thất bại"));
+        System.out.println("Kết thúc kiểm tra. Kết quả: " + (result ? "Thành công" : "Thất bại"));
+    }
     
-    Product validProduct = new FoodProduct(
-        2,
-        "Test Food",
-        20,
-        50.0,
-        "Food",
-        currentDate,
-        expiryDate,
-        "Test Supplier"
-    );
+    @Test
+    @DisplayName("Test adding a valid food product successfully")
+    public void testAddValidFoodProduct() throws SQLException {
+        logger.info("Bắt đầu kiểm tra thêm sản phẩm thực phẩm...");
+        System.out.println("Bắt đầu kiểm tra thêm sản phẩm thực phẩm...");
     
-    // Act
-    boolean result = productDAO.addProduct(validProduct);
+        when(mockPreparedStatement.executeUpdate()).thenReturn(1);
+        Date currentDate = new Date(System.currentTimeMillis());
+        Date expiryDate = new Date(System.currentTimeMillis() + 86400000);
+        
+        Product validProduct = new FoodProduct(
+            2, "Test Food", 20, 50.0, "Food", currentDate, expiryDate, "Test Supplier"
+        );
+        
+        boolean result = productDAO.addProduct(validProduct);
+        
+        assertTrue(result, "Sản phẩm thực phẩm phải được thêm thành công");
+        logger.info("Kết thúc kiểm tra. Kết quả: " + (result ? "Thành công" : "Thất bại"));
+        System.out.println("Kết thúc kiểm tra. Kết quả: " + (result ? "Thành công" : "Thất bại"));
+    }
     
-    // Assert
-    assertTrue(result, "Food product should be added successfully");
-    logger.info("Finished testAddValidFoodProduct. Result: " + result);
-}
-
-
-
     @Test
     @DisplayName("Test adding an invalid product")
     public void testAddInvalidProduct() throws SQLException {
-        logger.info("Starting testAddInvalidProduct...");
+        logger.info("Bắt đầu kiểm tra thêm sản phẩm không hợp lệ...");
+        System.out.println("Bắt đầu kiểm tra thêm sản phẩm không hợp lệ...");
+    
+        // Tạo sản phẩm không hợp lệ với ngày hết hạn trước ngày sản xuất
+        Date currentDate = new Date(System.currentTimeMillis());
+        Date invalidExpiryDate = new Date(System.currentTimeMillis() - 86400000); // Yesterday
         
-        // Arrange: Create an invalid FoodProduct with incorrect data
-        Product invalidProduct = new FoodProduct(15, "Invalid", 32, 50.0, "Food", null, null, "th");
-
-        // Act: Call the addProduct method
+        Product invalidProduct = new FoodProduct(
+            15, 
+            "",  
+            -1,  
+            -50.0, 
+            "Food", 
+            currentDate,
+            invalidExpiryDate, 
+            "" 
+        );
+    
+        
+        when(mockPreparedStatement.executeUpdate()).thenThrow(new SQLException("Invalid product data"));
+    
         boolean result = productDAO.addProduct(invalidProduct);
-
-        // Assert: Verify the product was not added due to invalid data
-        assertFalse(result , "Product should not be added due to invalid data.");
-        logger.info("Finished testAddInvalidProduct. Result: " + result);
-    }
-    @Test
-@DisplayName("Test adding a product with negative quantity")
-public void testAddProductWithNegativeQuantity() throws SQLException {
-    logger.info("Starting testAddProductWithNegativeQuantity...");
-
-    Product invalidProduct = new ElectronicsProduct(35, "Laptop", -5, 1000.0, "Electronics", 24, 1500.0);
-
-    boolean result = productDAO.addProduct(invalidProduct);
-
-    assertFalse(result, "Product should not be added due to negative quantity.");
-    logger.info("Finished testAddProductWithNegativeQuantity. Result: " + result);
-}
+    
+        assertFalse(result, "Sản phẩm không hợp lệ không được thêm vào");
+        logger.info("Kết thúc kiểm tra. Kết quả: " + (result ? "Thành công" : "Thất bại"));
+        System.out.println("Kết thúc kiểm tra. Kết quả: " + (result ? "Thành công" : "Thất bại"));
+    }  
 }

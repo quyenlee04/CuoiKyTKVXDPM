@@ -15,4 +15,8 @@ public class SearchProductUseCase {
     public List<Product> execute() {
         return productListDAOMySQL.getProductsExpiringSoon();
     }
+
+    public List<Product> searchProductsExpiringSoon() {
+        return execute(); // Gọi phương thức execute để lấy danh sách sản phẩm
+    }
 }
